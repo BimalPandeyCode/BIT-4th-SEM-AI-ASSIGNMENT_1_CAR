@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="icon" type="image/x-icon" href="/Assets/favicon.png" />
+    <title>AI-1</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+  <body>
+    <div style="display: flex; flex-direction: row">
+      <canvas id="canv" style="border: 1px solid #000000"></canvas>
+      <div style="padding-left: 10px">
+        <div
+          id="stop"
+          style="
+            width: 50px;
+            height: 50px;
+            background-color: red;
+            border-radius: 50%;
+            margin-bottom: 10px;
+            outline: 3px solid #8b0000;
+          "
+        ></div>
+        <div
+          id="go"
+          style="
+            width: 50px;
+            height: 50px;
+            background-color: green;
+            border-radius: 50%;
+            outline: 3px solid #023020;
+          "
+        ></div>
+      </div>
+    </div>
+    <script>
+      // Img loading func
+      const loadImg = (src) => {
+        return new Promise((resolve, reject) => {
+          let img = new Image();
+          img.onload = () => {
+            resolve(img);
+          };
+          img.onerror = () => {
+            reject(new Error(`Failed to load image from ${src}`));
+          };
+          img.src = src;
+        });
+      };
+      const drawImg = (src, posX, posY, width, height) => {
+        ctx.drawImage(src, posX, posY, width, height);
+      };
+      const loadAndDrawAllCars = (loadedCars, zebra) => {
+        let activeCar = loadedCars[activeCarIndex];
+        drawImg(
+          zebra,
+          zebraProp.posX,
+          zebraProp.posY,
+          zebraProp.width,
+          zebraProp.height
+        );
+        drawImg(
+          activeCar.loadedImg,
+          activeCar.posX,
+          activeCar.posY,
+          activeCar.width,
+          activeCar.height
+        );
+      };
+      const randGen = (min = 0, max = 3) => {
+        return Math.floor(Math.random() * (max - min + 1) + min);
+      };
+
+      let canvProp = {
+        width: 1000,
+        height: 500,
+      };
+      let zebraProp = {
+        width: 340,
+        height: 500,
+        posX: 659,
+        posY: 0,
+      };
+      let canGo = true;
+      let trafficTime = 5000;
+
+      let canv = document.getElementById("canv");
+      const ctx = canv.getContext("2d");
+
+      canv.width = canvProp.width;
+      canv.height = canvProp.height;
+
+      let activeCarIndex = randGen();
+
+      class carProp {
+        constructor(carIndex, speed = 4) {
+          this.width = 207;
+          this.height = 100;
+          this.maxSpeed = 10;
+          this.acceleration = 1;
+          this.posX = -this.width;
+          this.posY = 200;
+          this.currSpeed = speed;
+          this.carIndex = carIndex;
+        }
+        get getPath() {
+          return `./Assets/${this.carIndex}.png`;
+        }
+        set setImg(img) {
+          this.loadedImg = img;
+        }
+        move() {
+          if (this.posX >= this.width + canvProp.width) {
+            this.posX = -this.width;
+            activeCarIndex = randGen();
+            console.log(activeCarIndex);
+          } else {
+            this.posX = this.posX + this.currSpeed;
+          }
+        }
+      }
+
+      // Load images
+      let loadedCar1 = new carProp(1, 6);
+      let loadedCar2 = new carProp(2, 10);
+      let loadedCar3 = new carProp(3, 1);
+      let loadedCar4 = new carProp(4, 5);
+      let loadedCars = [loadedCar1, loadedCar2, loadedCar3, loadedCar4];
+      let zebra;
+      const init = async () => {
+        loadedCar1.setImg = await loadImg(loadedCar1.getPath);
+        loadedCar2.setImg = await loadImg(loadedCar2.getPath);
+        loadedCar3.setImg = await loadImg(loadedCar3.getPath);
+        loadedCar4.setImg = await loadImg(loadedCar4.getPath);
+
+        zebra = await loadImg("./Assets/zebra.png");
+      };
+      const changeTrafficLight = (canGo) => {
+        if (canGo) {
+          document.getElementById("go").style.backgroundColor = "green";
+          document.getElementById("stop").style.backgroundColor = "white";
+        } else {
+          document.getElementById("go").style.backgroundColor = "white";
+          document.getElementById("stop").style.backgroundColor = "red";
+        }
+      };
+
+      // To change the traffic lights in traffic time interval
+      changeTrafficLight(canGo);
+      setInterval(() => {
+        canGo = !canGo;
+        changeTrafficLight(canGo);
+      }, trafficTime);
+
+      const gameLoop = () => {
+        // Clears the canvas for re-rendering
+        ctx.clearRect(0, 0, canvProp.width, canvProp.height);
+        let activeCar = loadedCars[activeCarIndex];
+
+        if (
+          !canGo &&
+          activeCar.posX + activeCar.width >= zebraProp.posX - 10 &&
+          activeCar.posX + activeCar.width <= zebraProp.posX + 10
+        ) {
+        } else {
+          activeCar.move();
+        }
+
+        loadAndDrawAllCars(loadedCars, zebra);
+        requestAnimationFrame(gameLoop);
+      };
+
+      init().then(() => {
+        gameLoop();
+      });
+    </script>
+  </body>
+</html>
